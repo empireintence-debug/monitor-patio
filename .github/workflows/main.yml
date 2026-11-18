@@ -12,21 +12,18 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      # Baixar o projeto
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Preparar Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
 
-      # Instalar dependências do Linux
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
             build-essential \
             git \
             zip \
@@ -47,29 +44,33 @@ jobs:
             cmake \
             ant
 
-      # Instalar Buildozer e Cython
       - name: Install Buildozer
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install cython==0.29.36 buildozer
 
-      # Armazenar SDK, NDK e arquivos de compilação
       - name: Cache Buildozer
         uses: actions/cache@v4
         with:
           path: |
             .buildozer
             ~/.buildozer
-          key: buildozer-v5-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
+          key: buildozer-v6-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
           restore-keys: |
-            buildozer-v5-${{ runner.os }}-
+            buildozer-v6-${{ runner.os }}-
 
-      # Compilar o APK
+      - name: Pre-accept Android SDK Licenses
+        run: |
+          for SDK_DIR in "$HOME/.buildozer/android/platform/android-sdk" ".buildozer/android/platform/android-sdk"; do
+            mkdir -p "$SDK_DIR/licenses"
+            printf "d56f5187479451eabf01fb78af6dfcb139a648b0\n84831b5859ab4911178640195629415afe749d23\n24333f8a63b6825ea9c5514f83c2829b004d1fb8\n" > "$SDK_DIR/licenses/android-sdk-license"
+            printf "84831b5859ab4911178640195629415afe749d23\n" > "$SDK_DIR/licenses/android-sdk-preview-license"
+          done
+
       - name: Build APK
         run: |
-          buildozer -v android debug
+          yes | buildozer -v android debug
 
-      # Disponibilizar o APK para download
       - name: Upload APK
         if: success()
         uses: actions/upload-artifact@v4
@@ -78,17 +79,15 @@ jobs:
           path: bin/*.apk
           if-no-files-found: error
 
-      # Recolher registros se houver erro
       - name: Collect build logs
         if: failure()
         run: |
           mkdir -p collected_logs
-          find .buildozer "$HOME/.buildozer" \
+          find . .buildozer "$HOME/.buildozer" \
             -type f -name "*.log" \
             -exec cp --parents {} collected_logs/ \; \
             2>/dev/null || true
 
-      # Disponibilizar registros para análise
       - name: Upload error logs
         if: failure()
         uses: actions/upload-artifact@v4
