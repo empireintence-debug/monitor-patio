@@ -75,7 +75,7 @@ jobs:
 
       - name: Build with Buildozer
         env:
-          ANDROID_NDK_HOME: ${{ github.workspace }/.buildozer/android/platform/android-ndk-r28c
+          ANDROID_NDK_HOME: ${{ github.workspace }}/.buildozer/android/platform/android-ndk-r28c
           ANDROID_NDK_ROOT: ""
           ACLOCAL_PATH: /usr/share/aclocal
         run: |
