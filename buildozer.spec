@@ -1,32 +1,17 @@
-
 [app]
 
-# Nome do aplicativo
-title = Monitor de Pátio
-
-# Identificação do pacote Android
+title = Monitor Patio
 package.name = monitorpatio
-package.domain = org.monitor
-
-# Pasta onde estão os arquivos do aplicativo
+package.domain = org.empireintence
 source.dir = .
-
-# Arquivos que serão incluídos no APK
-source.include_exts = py,png,jpg,jpeg,kv,atlas
-
-# Versão do aplicativo
-version = 1.0.0
-
-# Bibliotecas necessárias
+source.include_exts = py,png,jpg,kv,atlas
+version = 1.0
 requirements = python3,kivy
-
-# Orientação da tela
 orientation = portrait
-
-# Configurações Android
+android.permissions = INTERNET
 android.api = 33
-android.minapi = 21
-android.ndk = 25b
-
-# Aceitar licenças do Android SDK
+android.minapi = 24
+android.ndk = 28c
+android.androidx = True
 android.accept_sdk_license = True
+log_level = 2
