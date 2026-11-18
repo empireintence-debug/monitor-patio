@@ -39,6 +39,7 @@ jobs:
             openjdk-17-jdk \
             autoconf \
             libtool \
+            libtool-bin \
             pkg-config \
             libncurses5-dev \
             libstdc++6 \
@@ -87,6 +88,7 @@ jobs:
       - name: Build with Buildozer
         env:
           ANDROID_NDK_HOME: ${{ github.workspace }}/.buildozer/android/platform/android-ndk-r28c
+          ACLOCAL_PATH: /usr/share/aclocal
         run: buildozer -v android debug
 
       - name: Upload APK on success
@@ -101,5 +103,4 @@ jobs:
         if: failure()
         with:
           name: build-logs
-          path: .buildozer/logs/*
-          
+          path: .buildozer/android/platform/build-*/build/other_builds/*/pkg/logs/ || .buildozer/logs/*
