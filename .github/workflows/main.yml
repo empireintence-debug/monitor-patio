@@ -77,7 +77,7 @@ jobs:
       - name: Build with Buildozer
         env:
           ANDROID_NDK_HOME: ${{ github.workspace }}/.buildozer/android/platform/android-ndk-r28c
-        run: buildozer -v android debug
+        run: buildozer --log_level 2 android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
