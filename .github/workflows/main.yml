@@ -20,7 +20,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
             python3-pip \
             build-essential \
             git \
@@ -86,7 +86,7 @@ jobs:
 
       - name: Build with Buildozer
         env:
-          ANDROID_NDK_HOME: ${{ github.workspace }}.buildozer/android/platform/android-ndk-r28c
+          ANDROID_NDK_HOME: ${{ github.workspace }}/.buildozer/android/platform/android-ndk-r28c
         run: buildozer -v android debug
 
       - name: Upload APK on success
