@@ -26,24 +26,14 @@ jobs:
             git \
             python3-dev \
             ffmpeg \
-            libsdl2-dev \
-            libsdl2-image-dev \
-            libsdl2-mixer-dev \
-            libsdl2-ttf-dev \
-            libportmidi-dev \
-            libswscale-dev \
-            libavformat-dev \
-            libavcodec-dev \
-            zlib1g-dev \
-            libunwind-dev \
+            libltdl-dev \
+            libffi-dev \
+            libssl-dev \
             openjdk-17-jdk \
             autoconf \
             libtool \
             libtool-bin \
             pkg-config \
-            libncurses5-dev \
-            libstdc++6 \
-            libglu1-mesa-dev \
             unzip \
             zip \
             ant
