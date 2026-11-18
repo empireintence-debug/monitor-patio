@@ -1,3 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            python3-pip \
+            build-essential \
+            git \
+            python3-dev \
+            ffmpeg \
+            libltdl-dev \
+            libffi-dev \
+            libssl-dev \
+            openjdk-17-jdk \
+            autoconf \
+            libtool \
+            libtool-bin \
+            pkg-config \
+            unzip \
+            zip \
+            ant
+
+      - name: Install Buildozer and Cython
+        run: |
+          pip install --upgrade pip
+          pip install cython==0.29.36 buildozer
+
       - name: Cache Buildozer Directory
         uses: actions/cache@v4
         with:
@@ -8,3 +53,51 @@
           restore-keys: |
             buildozer-v3-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}-
             buildozer-v3-${{ runner.os }}-
+
+      - name: Setup Android SDK Command-line Tools
+        run: |
+          ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+          rm -rf $ANDROID_HOME/cmdline-tools
+          mkdir -p $ANDROID_HOME/cmdline-tools/latest
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+          unzip -q cmdline-tools.zip -d temp_tools
+          mv temp_tools/cmdline-tools/* $ANDROID_HOME/cmdline-tools/latest/
+          rm -rf cmdline-tools.zip temp_tools
+          if [ ! -L "$ANDROID_HOME/tools" ]; then
+            ln -s $ANDROID_HOME/cmdline-tools/latest $ANDROID_HOME/tools
+          fi
+
+      - name: Accept Android SDK licenses
+        run: |
+          ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+          yes | sdkmanager --licenses || true
+
+      - name: Build with Buildozer
+        env:
+          ANDROID_NDK_HOME: ${{ github.workspace }/.buildozer/android/platform/android-ndk-r28c
+          ANDROID_NDK_ROOT: ""
+          ACLOCAL_PATH: /usr/share/aclocal
+        run: |
+          unset ANDROID_NDK_ROOT
+          buildozer -v android debug
+
+      - name: Upload APK on success
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: package
+          path: bin/*.apk
+
+      - name: Collect Build Logs on failure
+        if: failure()
+        run: |
+          mkdir -p collected_logs
+          find .buildozer -name "*.log" -exec cp --parents {} collected_logs/ 2>/dev/null || true
+
+      - name: Upload Build Logs Artifact
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: build-logs
+          path: collected_logs/
