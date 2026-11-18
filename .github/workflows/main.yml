@@ -2,106 +2,97 @@ name: CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+  workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
+    name: Build Monitor de Pátio APK
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
 
     steps:
-      - uses: actions/checkout@v4
+      # Baixar o projeto
+      - name: Checkout
+        uses: actions/checkout@v4
 
+      # Preparar Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.10"
 
-      - name: Install dependencies
+      # Instalar dependências do Linux
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            python3-pip \
+          sudo apt-get install -y \
             build-essential \
             git \
-            python3-dev \
-            ffmpeg \
-            libltdl-dev \
-            libffi-dev \
-            libssl-dev \
+            zip \
+            unzip \
             openjdk-17-jdk \
+            python3-dev \
             autoconf \
+            automake \
             libtool \
             libtool-bin \
             pkg-config \
-            unzip \
-            zip \
+            zlib1g-dev \
+            libffi-dev \
+            libssl-dev \
+            libltdl-dev \
+            libncurses5-dev \
+            libncursesw5-dev \
+            cmake \
             ant
 
-      - name: Install Buildozer and Cython
+      # Instalar Buildozer e Cython
+      - name: Install Buildozer
         run: |
-          pip install --upgrade pip
+          python -m pip install --upgrade pip setuptools wheel
           pip install cython==0.29.36 buildozer
 
-      - name: Cache Buildozer Directory
+      # Armazenar SDK, NDK e arquivos de compilação
+      - name: Cache Buildozer
         uses: actions/cache@v4
         with:
           path: |
             .buildozer
             ~/.buildozer
-          key: buildozer-v3-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}-${{ hashFiles('.github/workflows/main.yml') }}
+          key: buildozer-v5-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
           restore-keys: |
-            buildozer-v3-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}-
-            buildozer-v3-${{ runner.os }}-
+            buildozer-v5-${{ runner.os }}-
 
-      - name: Force Clean SDK Tools Cache Conflict
+      # Compilar o APK
+      - name: Build APK
         run: |
-          ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
-          rm -rf $ANDROID_HOME/cmdline-tools
-          rm -rf $ANDROID_HOME/tools
-
-      - name: Setup Android SDK Command-line Tools
-        run: |
-          ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
-          mkdir -p $ANDROID_HOME/cmdline-tools/latest
-          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
-          unzip -q cmdline-tools.zip -d temp_tools
-          mv temp_tools/cmdline-tools/* $ANDROID_HOME/cmdline-tools/latest/
-          rm -rf cmdline-tools.zip temp_tools
-
-      - name: Accept Android SDK licenses
-        run: |
-          ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
-          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
-          yes | sdkmanager --licenses || true
-
-      - name: Build with Buildozer
-        env:
-          ANDROID_NDK_HOME: ${{ github.workspace }}/.buildozer/android/platform/android-ndk-r28c
-          ANDROID_NDK_ROOT: ""
-          ACLOCAL_PATH: /usr/share/aclocal
-        run: |
-          unset ANDROID_NDK_ROOT
-          ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
-          export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
           buildozer -v android debug
 
-      - name: Upload APK on success
-        uses: actions/upload-artifact@v4
+      # Disponibilizar o APK para download
+      - name: Upload APK
         if: success()
+        uses: actions/upload-artifact@v4
         with:
-          name: package
+          name: Monitor-de-Patio-APK
           path: bin/*.apk
+          if-no-files-found: error
 
-      - name: Collect Build Logs on failure
+      # Recolher registros se houver erro
+      - name: Collect build logs
         if: failure()
         run: |
           mkdir -p collected_logs
-          find .buildozer -name "*.log" -exec cp --parents {} collected_logs/ 2>/dev/null || true
+          find .buildozer "$HOME/.buildozer" \
+            -type f -name "*.log" \
+            -exec cp --parents {} collected_logs/ \; \
+            2>/dev/null || true
 
-      - name: Upload Build Logs Artifact
-        uses: actions/upload-artifact@v4
+      # Disponibilizar registros para análise
+      - name: Upload error logs
         if: failure()
+        uses: actions/upload-artifact@v4
         with:
-          name: build-logs
+          name: Monitor-de-Patio-Build-Logs
           path: collected_logs/
+          if-no-files-found: warn
