@@ -52,15 +52,9 @@ jobs:
           pip install --upgrade pip
           pip install cython==0.29.36 buildozer
 
-      - name: Cache Buildozer global directory
-        uses: actions/cache@v3
-        with:
-          path: |
-            .buildozer
-            ~/.gradle
-          key: buildozer-${{ hashFiles('buildozer.spec') }}
-          restore-keys: |
-            buildozer-
+      - name: Limpar Cache Antigo e Forçar Atualização
+        run: |
+          rm -rf .buildozer
 
       - name: Accept Android SDK licenses
         run: |
