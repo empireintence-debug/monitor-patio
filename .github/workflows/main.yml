@@ -52,21 +52,31 @@ jobs:
           pip install --upgrade pip
           pip install cython==0.29.36 buildozer
 
-      - name: Limpeza Total de Cache e Pastas
-        run: |
-          rm -rf .buildozer
-          rm -rf ~/.buildozer
+      - name: Cache Buildozer Directory
+        uses: actions/cache@v4
+        with:
+          path: |
+            .buildozer
+            ~/.buildozer
+          key: buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}-${{ hashFiles('.github/workflows/main.yml') }}
+          restore-keys: |
+            buildozer-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}-
+            buildozer-${{ runner.os }}-
 
       - name: Setup Android SDK Command-line Tools
         run: |
           ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
-          mkdir -p $ANDROID_HOME/cmdline-tools
-          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
-          unzip -q cmdline-tools.zip -d temp_tools
-          mkdir -p $ANDROID_HOME/cmdline-tools/latest
-          mv temp_tools/cmdline-tools/* $ANDROID_HOME/cmdline-tools/latest/
-          rm -rf cmdline-tools.zip temp_tools
-          ln -s $ANDROID_HOME/cmdline-tools/latest $ANDROID_HOME/tools
+          if [ ! -d "$ANDROID_HOME/cmdline-tools/latest" ]; then
+            mkdir -p $ANDROID_HOME/cmdline-tools
+            wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+            unzip -q cmdline-tools.zip -d temp_tools
+            mkdir -p $ANDROID_HOME/cmdline-tools/latest
+            mv temp_tools/cmdline-tools/* $ANDROID_HOME/cmdline-tools/latest/
+            rm -rf cmdline-tools.zip temp_tools
+          fi
+          if [ ! -L "$ANDROID_HOME/tools" ]; then
+            ln -s $ANDROID_HOME/cmdline-tools/latest $ANDROID_HOME/tools
+          fi
 
       - name: Accept Android SDK licenses
         run: |
@@ -76,11 +86,20 @@ jobs:
 
       - name: Build with Buildozer
         env:
-          ANDROID_NDK_HOME: ${{ github.workspace }}/.buildozer/android/platform/android-ndk-r28c
+          ANDROID_NDK_HOME: ${{ github.workspace }}.buildozer/android/platform/android-ndk-r28c
         run: buildozer -v android debug
 
-      - name: Upload APK
+      - name: Upload APK on success
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: package
           path: bin/*.apk
+
+      - name: Upload Build Logs on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: build-logs
+          path: .buildozer/logs/*
+          
