@@ -9,11 +9,16 @@ package.name = monitorpatio
 # (str) Package domain (needed for android packaging)
 package.domain = org.empireintence
 
+# (str) Source directory where the application files are located
+source.dir = .
+
 # (list) Source files to include (let it empty to include all files)
 source.include_exts = py,png,jpg,kv,atlas
 
+# (str) Application versioning (method 1)
+version = 1.0
+
 # (list) Application requirements
-# comma separated e.g. requirements = sqlite3,kivy
 requirements = python3,kivy
 
 # (str) Supported orientations
