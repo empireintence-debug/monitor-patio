@@ -88,8 +88,11 @@ jobs:
       - name: Build with Buildozer
         env:
           ANDROID_NDK_HOME: ${{ github.workspace }}/.buildozer/android/platform/android-ndk-r28c
+          ANDROID_NDK_ROOT: ""
           ACLOCAL_PATH: /usr/share/aclocal
-        run: buildozer -v android debug
+        run: |
+          unset ANDROID_NDK_ROOT
+          buildozer -v android debug
 
       - name: Upload APK on success
         uses: actions/upload-artifact@v4
@@ -110,4 +113,3 @@ jobs:
         with:
           name: build-logs
           path: collected_logs/
-          
