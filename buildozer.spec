@@ -1,32 +1,32 @@
+
 [app]
 
-# (str) Title of your application
-title = Monitor Patio
+# Nome do aplicativo
+title = Monitor de Pátio
 
-# (str) Package name
+# Identificação do pacote Android
 package.name = monitorpatio
-
-# (str) Package domain (needed for android packaging)
 package.domain = org.monitor
 
-# (list) Source files to include (let it empty to include all files)
-source.include_exts = py,png,jpg,kv,atlas
+# Pasta onde estão os arquivos do aplicativo
+source.dir = .
 
-# (list) Application requirements
-# comma separated e.g. requirements = sqlite3,kivy
+# Arquivos que serão incluídos no APK
+source.include_exts = py,png,jpg,jpeg,kv,atlas
+
+# Versão do aplicativo
+version = 1.0.0
+
+# Bibliotecas necessárias
 requirements = python3,kivy
 
-# (str) Supported orientations
+# Orientação da tela
 orientation = portrait
 
-# (int) Target Android API, should be as high as possible.
+# Configurações Android
 android.api = 33
+android.minapi = 21
+android.ndk = 25b
 
-# (int) Minimum API your APK will support.
-android.min_api = 21
-
-# (str) Android NDK version to use
-android.ndk_version = 28c
-
-# (bool) Enable/Disable pip/buildozer acceptance of android licenses
+# Aceitar licenças do Android SDK
 android.accept_sdk_license = True
