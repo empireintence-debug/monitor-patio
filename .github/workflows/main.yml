@@ -66,6 +66,7 @@ jobs:
           mkdir -p $ANDROID_HOME/cmdline-tools/latest
           mv temp_tools/cmdline-tools/* $ANDROID_HOME/cmdline-tools/latest/
           rm -rf cmdline-tools.zip temp_tools
+          ln -s $ANDROID_HOME/cmdline-tools/latest $ANDROID_HOME/tools
 
       - name: Accept Android SDK licenses
         run: |
@@ -75,7 +76,7 @@ jobs:
 
       - name: Build with Buildozer
         env:
-          ANDROID_NDK_HOME: ${{ github.workspace }}/.buildozer/android/platform/android-ndk-r25b
+          ANDROID_NDK_HOME: ${{ github.workspace }}/.buildozer/android/platform/android-ndk-r28c
         run: buildozer -v android debug
 
       - name: Upload APK
