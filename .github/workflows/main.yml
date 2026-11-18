@@ -52,11 +52,31 @@ jobs:
           pip install --upgrade pip
           pip install cython==0.29.36 buildozer
 
+      - name: Cache Buildozer global directory
+        uses: actions/cache@v3
+        with:
+          path: |
+            .buildozer
+            ~/.gradle
+          key: buildozer-${{ hashFiles('buildozer.spec') }}
+          restore-keys: |
+            buildozer-
+
+      - name: Accept Android SDK licenses
+        run: |
+          mkdir -p ~/.android
+          touch ~/.android/repositories.cfg
+          ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+          mkdir -p $ANDROID_HOME/licenses
+          echo -e "\n24333f8a43b682427c07aa109d2318a18a3de61e" > $ANDROID_HOME/licenses/android-sdk-license
+          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > $ANDROID_HOME/licenses/android-sdk-preview-license
+
       - name: Build with Buildozer
-        run: yes | buildozer -v android debug
+        run: buildozer -v android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: package
           path: bin/*.apk
+          
