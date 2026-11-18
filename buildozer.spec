@@ -14,3 +14,4 @@ android.minapi = 24
 android.ndk = 28c
 android.androidx = True
 android.accept_sdk_license = True
+p4a.branch = master
