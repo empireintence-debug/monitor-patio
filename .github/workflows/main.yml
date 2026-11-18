@@ -98,9 +98,16 @@ jobs:
           name: package
           path: bin/*.apk
 
-      - name: Upload Build Logs on failure
+      - name: Collect Build Logs on failure
+        if: failure()
+        run: |
+          mkdir -p collected_logs
+          find .buildozer -name "*.log" -exec cp --parents {} collected_logs/ 2>/dev/null || true
+
+      - name: Upload Build Logs Artifact
         uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: build-logs
-          path: .buildozer/android/platform/build-*/build/other_builds/*/pkg/logs/ || .buildozer/logs/*
+          path: collected_logs/
+          
