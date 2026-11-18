@@ -74,6 +74,8 @@ jobs:
           yes | sdkmanager --licenses || true
 
       - name: Build with Buildozer
+        env:
+          ANDROID_NDK_HOME: ${{ github.workspace }}/.buildozer/android/platform/android-ndk-r25b
         run: buildozer -v android debug
 
       - name: Upload APK
