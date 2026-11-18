@@ -1,4 +1,4 @@
-name: CI
+aname: CI
 
 on:
   push:
@@ -53,10 +53,10 @@ jobs:
 
     - name: Build with Buildozer
       run: |
-        yes | buildozer -v android debug
+        | buildozer -v android debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: package
-        path: bin/*.apka
+        path: bin/*.apk
