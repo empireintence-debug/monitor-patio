@@ -1,5 +1,6 @@
 [app]
-title = Monitor Patio
+
+title = Monitor Pátio
 package.name = monitorpatio
 package.domain = org.empireintence
 source.dir = .
