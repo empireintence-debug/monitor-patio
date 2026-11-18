@@ -55,21 +55,35 @@ jobs:
           path: |
             .buildozer
             ~/.buildozer
-          key: buildozer-v6-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
+          key: buildozer-v7-${{ runner.os }}-${{ hashFiles('buildozer.spec') }}
           restore-keys: |
-            buildozer-v6-${{ runner.os }}-
+            buildozer-v7-${{ runner.os }}-
 
-      - name: Pre-accept Android SDK Licenses
+      - name: Setup Android SDK Tools and Licenses
         run: |
-          for SDK_DIR in "$HOME/.buildozer/android/platform/android-sdk" ".buildozer/android/platform/android-sdk"; do
-            mkdir -p "$SDK_DIR/licenses"
-            printf "d56f5187479451eabf01fb78af6dfcb139a648b0\n84831b5859ab4911178640195629415afe749d23\n24333f8a63b6825ea9c5514f83c2829b004d1fb8\n" > "$SDK_DIR/licenses/android-sdk-license"
-            printf "84831b5859ab4911178640195629415afe749d23\n" > "$SDK_DIR/licenses/android-sdk-preview-license"
-          done
+          ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+          mkdir -p $ANDROID_HOME/cmdline-tools/latest
+          if [ ! -f "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
+            wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
+            unzip -q cmdline-tools.zip -d temp_tools
+            rm -rf $ANDROID_HOME/cmdline-tools/latest/*
+            mv temp_tools/cmdline-tools/* $ANDROID_HOME/cmdline-tools/latest/
+            rm -rf cmdline-tools.zip temp_tools
+          fi
+          
+          # Criar compatibilidade de pastas para o Buildozer encontrar o sdkmanager
+          mkdir -p $ANDROID_HOME/tools
+          ln -sfn $ANDROID_HOME/cmdline-tools/latest/bin $ANDROID_HOME/tools/bin
+          ln -sfn $ANDROID_HOME/cmdline-tools/latest/lib $ANDROID_HOME/tools/lib
+
+          # Injetar licenças aceitas
+          mkdir -p $ANDROID_HOME/licenses
+          printf "d56f5187479451eabf01fb78af6dfcb139a648b0\n84831b5859ab4911178640195629415afe749d23\n24333f8a63b6825ea9c5514f83c2829b004d1fb8\n" > "$ANDROID_HOME/licenses/android-sdk-license"
+          printf "84831b5859ab4911178640195629415afe749d23\n" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
 
       - name: Build APK
         run: |
-          yes | buildozer -v android debug
+          buildozer -v android debug
 
       - name: Upload APK
         if: success()
