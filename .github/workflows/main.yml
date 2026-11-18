@@ -50,7 +50,7 @@ jobs:
       - name: Install Buildozer and Cython
         run: |
           pip install --upgrade pip
-          pip install cython==0.29.36 buildozer pxhp4a
+          pip install cython==0.29.36 buildozer
 
       - name: Limpeza Total de Cache e Pastas
         run: |
@@ -74,3 +74,4 @@ jobs:
         with:
           name: package
           path: bin/*.apk
+          
