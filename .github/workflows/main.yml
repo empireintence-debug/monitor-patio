@@ -1,4 +1,3 @@
-
 name: CI
 
 on:
@@ -75,27 +74,62 @@ jobs:
       - name: Setup Android SDK Tools and Licenses
         run: |
           ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
-          mkdir -p $ANDROID_HOME/cmdline-tools/latest
+          mkdir -p "$ANDROID_HOME/cmdline-tools/latest"
 
           if [ ! -f "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
             wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline-tools.zip
             unzip -q cmdline-tools.zip -d temp_tools
-            rm -rf $ANDROID_HOME/cmdline-tools/latest/*
-            mv temp_tools/cmdline-tools/* $ANDROID_HOME/cmdline-tools/latest/
+            rm -rf "$ANDROID_HOME/cmdline-tools/latest/"*
+            mv temp_tools/cmdline-tools/* "$ANDROID_HOME/cmdline-tools/latest/"
             rm -rf cmdline-tools.zip temp_tools
           fi
 
-          mkdir -p $ANDROID_HOME/tools
-          ln -sfn $ANDROID_HOME/cmdline-tools/latest/bin $ANDROID_HOME/tools/bin
-          ln -sfn $ANDROID_HOME/cmdline-tools/latest/lib $ANDROID_HOME/tools/lib
+          mkdir -p "$ANDROID_HOME/tools"
+          ln -sfn "$ANDROID_HOME/cmdline-tools/latest/bin" "$ANDROID_HOME/tools/bin"
+          ln -sfn "$ANDROID_HOME/cmdline-tools/latest/lib" "$ANDROID_HOME/tools/lib"
 
-          mkdir -p $ANDROID_HOME/licenses
+          mkdir -p "$ANDROID_HOME/licenses"
           printf "d56f5187479451eabf01fb78af6dfcb139a648b0\n84831b5859ab4911178640195629415afe749d23\n24333f8a63b6825ea9c5514f83c2829b004d1fb8\n" > "$ANDROID_HOME/licenses/android-sdk-license"
           printf "84831b5859ab4911178640195629415afe749d23\n" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
 
       - name: Build APK
+        shell: bash
         run: |
-          buildozer -v android debug
+          mkdir -p collected_logs
+          log="collected_logs/buildozer-completo.log"
+          matches="$RUNNER_TEMP/buildozer-erros.txt"
+          pattern='(^|[[:space:]])(fatal error:|error:|killed([[:space:]]|$))|ErrorReturnCode|Traceback|Command failed|BUILD FAILED|FAILURE: Build failed|No space left on device'
+
+          echo "Compilando o APK. A saída completa está sendo gravada em $log."
+
+          if buildozer -v android debug > "$log" 2>&1; then
+            echo "Buildozer concluiu a criação do APK."
+          else
+            status=$?
+            echo "::error title=Falha ao criar APK::Buildozer saiu com código $status. Veja os detalhes no Resumo da execução."
+
+            {
+              echo "## ❌ Falha ao criar APK"
+              echo
+              echo "O Buildozer terminou com código $status."
+              echo
+              echo "### Mensagens de erro encontradas"
+              echo
+              if grep -aEin "$pattern" "$log" > "$matches"; then
+                tail -n 15 "$matches" | cut -c 1-500 | sed 's/^/    /'
+              else
+                echo "Nenhuma mensagem correspondeu à busca. Veja o final do log abaixo."
+              fi
+              echo
+              echo "### Últimas 30 linhas do log"
+              echo
+              tail -n 30 "$log" | cut -c 1-500 | sed 's/^/    /'
+              echo
+              echo "Log completo: artefato Monitor-de-Patio-Build-Logs, arquivo buildozer-completo.log."
+            } >> "$GITHUB_STEP_SUMMARY"
+
+            exit "$status"
+          fi
 
       - name: Upload APK
         if: success()
@@ -109,8 +143,9 @@ jobs:
         if: failure()
         run: |
           mkdir -p collected_logs
-          find . .buildozer "$HOME/.buildozer" \
-            -type f -name "*.log" \
+          find . "$HOME/.buildozer" \
+            -path './collected_logs' -prune -o \
+            -type f -name '*.log' \
             -exec cp --parents {} collected_logs/ \; \
             2>/dev/null || true
 
