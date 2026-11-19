@@ -1,3 +1,4 @@
+
 name: CI
 
 on:
@@ -49,6 +50,19 @@ jobs:
           python -m pip install --upgrade pip setuptools wheel
           pip install cython==0.29.36 buildozer
 
+      # CORREÇÃO: selecionar Java 17
+      - name: Configure Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Verify Java 17
+        run: |
+          echo "JAVA_HOME=$JAVA_HOME"
+          java -version
+          javac -version
+
       - name: Cache Buildozer
         uses: actions/cache@v4
         with:
@@ -70,13 +84,11 @@ jobs:
             mv temp_tools/cmdline-tools/* $ANDROID_HOME/cmdline-tools/latest/
             rm -rf cmdline-tools.zip temp_tools
           fi
-          
-          # Criar compatibilidade de pastas para o Buildozer encontrar o sdkmanager
+
           mkdir -p $ANDROID_HOME/tools
           ln -sfn $ANDROID_HOME/cmdline-tools/latest/bin $ANDROID_HOME/tools/bin
           ln -sfn $ANDROID_HOME/cmdline-tools/latest/lib $ANDROID_HOME/tools/lib
 
-          # Injetar licenças aceitas
           mkdir -p $ANDROID_HOME/licenses
           printf "d56f5187479451eabf01fb78af6dfcb139a648b0\n84831b5859ab4911178640195629415afe749d23\n24333f8a63b6825ea9c5514f83c2829b004d1fb8\n" > "$ANDROID_HOME/licenses/android-sdk-license"
           printf "84831b5859ab4911178640195629415afe749d23\n" > "$ANDROID_HOME/licenses/android-sdk-preview-license"
@@ -108,4 +120,4 @@ jobs:
         with:
           name: Monitor-de-Patio-Build-Logs
           path: collected_logs/
-          if-no-files-found: warn
+          if-no-files-found: warnw
