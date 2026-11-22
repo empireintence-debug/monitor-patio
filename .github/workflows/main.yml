@@ -47,13 +47,13 @@ jobs:
       - name: Install Buildozer
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install cython==0.29.36 buildozer
+          python -m pip install cython==0.29.36 buildozer
 
       - name: Configure Java 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
+          distribution: temurin
+          java-version: "17"
 
       - name: Verify Java 17
         run: |
@@ -73,7 +73,7 @@ jobs:
 
       - name: Setup Android SDK Tools and Licenses
         run: |
-          ANDROID_HOME=$HOME/.buildozer/android/platform/android-sdk
+          ANDROID_HOME="$HOME/.buildozer/android/platform/android-sdk"
           mkdir -p "$ANDROID_HOME/cmdline-tools/latest"
 
           if [ ! -f "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
@@ -95,18 +95,30 @@ jobs:
       - name: Build APK
         shell: bash
         run: |
+          # Mantém a versão de pip usada na criação do ambiente Android.
+          constraints="$RUNNER_TEMP/android-pip-constraints.txt"
+          printf 'pip==25.3\n' > "$constraints"
+          export PIP_CONSTRAINT="$constraints"
+          python -m pip config --user set install.constraint "$constraints"
+
+          # Recria apenas o ambiente pip temporário se ele veio do cache.
+          for venv in .buildozer/android/platform/build-*/build/venv; do
+            if [ -d "$venv" ]; then
+              rm -rf -- "$venv"
+            fi
+          done
+
           mkdir -p collected_logs
           log="collected_logs/buildozer-completo.log"
           matches="$RUNNER_TEMP/buildozer-erros.txt"
-          pattern='(^|[[:space:]])(fatal error:|error:|killed([[:space:]]|$))|ErrorReturnCode|Traceback|Command failed|BUILD FAILED|FAILURE: Build failed|No space left on device'
+          pattern='ImportError:|ModuleNotFoundError:|fatal error:|(^|[[:space:]])error:|No space left on device|BUILD FAILED|FAILURE: Build failed|Killed'
 
-          echo "Compilando o APK. A saída completa está sendo gravada em $log."
-
+          echo "Compilando o APK com a restrição pip==25.3."
           if buildozer -v android debug > "$log" 2>&1; then
             echo "Buildozer concluiu a criação do APK."
           else
             status=$?
-            echo "::error title=Falha ao criar APK::Buildozer saiu com código $status. Veja os detalhes no Resumo da execução."
+            echo "::error title=Falha ao criar APK::Buildozer saiu com código $status. Veja o Resumo da execução."
 
             {
               echo "## ❌ Falha ao criar APK"
@@ -116,16 +128,16 @@ jobs:
               echo "### Mensagens de erro encontradas"
               echo
               if grep -aEin "$pattern" "$log" > "$matches"; then
-                tail -n 15 "$matches" | cut -c 1-500 | sed 's/^/    /'
+                tail -n 20 "$matches" | cut -c 1-500 | sed 's/^/    /'
               else
-                echo "Nenhuma mensagem correspondeu à busca. Veja o final do log abaixo."
+                echo "Veja as últimas linhas e o log completo abaixo."
               fi
               echo
               echo "### Últimas 30 linhas do log"
               echo
               tail -n 30 "$log" | cut -c 1-500 | sed 's/^/    /'
               echo
-              echo "Log completo: artefato Monitor-de-Patio-Build-Logs, arquivo buildozer-completo.log."
+              echo "Arquivo completo: Monitor-de-Patio-Build-Logs / buildozer-completo.log"
             } >> "$GITHUB_STEP_SUMMARY"
 
             exit "$status"
