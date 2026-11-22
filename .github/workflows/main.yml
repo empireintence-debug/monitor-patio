@@ -95,13 +95,17 @@ jobs:
       - name: Build APK
         shell: bash
         run: |
-          # Mantém a versão de pip usada na criação do ambiente Android.
           constraints="$RUNNER_TEMP/android-pip-constraints.txt"
-          printf 'pip==25.3\n' > "$constraints"
+
+          # Restrições usadas na resolução e na instalação das dependências.
+          cat > "$constraints" <<'EOF'
+          pip==25.3
+          charset-normalizer @ https://files.pythonhosted.org/packages/fc/ad/d07d7862a62ffa6d79d68074d14823243dd235a77c45262acbf6adeb28bf/charset_normalizer-3.5.2-py3-none-any.whl
+          EOF
+
           export PIP_CONSTRAINT="$constraints"
           python -m pip config --user set install.constraint "$constraints"
 
-          # Recria apenas o ambiente pip temporário se ele veio do cache.
           for venv in .buildozer/android/platform/build-*/build/venv; do
             if [ -d "$venv" ]; then
               rm -rf -- "$venv"
@@ -113,7 +117,7 @@ jobs:
           matches="$RUNNER_TEMP/buildozer-erros.txt"
           pattern='ImportError:|ModuleNotFoundError:|fatal error:|(^|[[:space:]])error:|No space left on device|BUILD FAILED|FAILURE: Build failed|Killed'
 
-          echo "Compilando o APK com a restrição pip==25.3."
+          echo "Compilando com pip 25.3 e charset-normalizer 3.5.2 universal."
           if buildozer -v android debug > "$log" 2>&1; then
             echo "Buildozer concluiu a criação do APK."
           else
